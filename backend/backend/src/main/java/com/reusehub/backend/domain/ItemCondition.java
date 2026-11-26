@@ -1,5 +1,7 @@
 package com.reusehub.backend.domain;
 
+import java.util.Locale;
+
 public enum ItemCondition {
     LIKE_NEW("Like New"),
     GOOD("Good"),
@@ -17,12 +19,19 @@ public enum ItemCondition {
     }
 
     public static ItemCondition fromDisplayName(String value) {
+        String normalizedValue = normalize(value);
         for (ItemCondition condition : values()) {
-            if (condition.displayName.equalsIgnoreCase(value)
-                    || condition.name().equalsIgnoreCase(value)) {
+            if (normalize(condition.displayName).equals(normalizedValue)
+                    || normalize(condition.name()).equals(normalizedValue)) {
                 return condition;
             }
         }
         throw new IllegalArgumentException("Unsupported item condition");
+    }
+
+    private static String normalize(String value) {
+        return value == null
+                ? ""
+                : value.replaceAll("[\\s_-]+", "").toLowerCase(Locale.ROOT);
     }
 }

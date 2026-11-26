@@ -33,11 +33,15 @@ public class ListingService {
     @Transactional(readOnly = true)
     public List<ApiDtos.ListingResponse> search(
             String search, String category, String condition, String location, boolean includeUnavailable) {
+        String normalizedCondition = trimToNull(condition);
+        if (normalizedCondition != null) {
+            normalizedCondition = ItemCondition.fromDisplayName(normalizedCondition).name();
+        }
         return listingRepository.search(
                         includeUnavailable,
                         trimToNull(search),
                         trimToNull(category),
-                        trimToNull(condition),
+                        normalizedCondition,
                         trimToNull(location))
                 .stream()
                 .map(ApiMapper::listing)
