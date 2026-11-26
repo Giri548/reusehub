@@ -3,6 +3,7 @@ package com.reusehub.backend;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import com.reusehub.backend.domain.AccountStatus;
@@ -172,6 +173,50 @@ class BackendApplicationTests {
 				donor, secondRequest.id(), new ApiDtos.RequestStatusRequest("approved", null)));
 
 		assertEquals(1, listingRepository.findById(listing.id()).orElseThrow().getAvailableQuantity());
+	}
+
+	@Test
+	void listingConditionFilterAcceptsDisplayNamesCaseAndSpacing() {
+		User donor = saveUser(Role.DONOR);
+		ApiDtos.ListingResponse likeNewListing = listingService.create(donor, new ApiDtos.ListingCreateRequest(
+				"Like New monitor",
+				"A monitor in excellent condition for classroom use.",
+				"Electronics",
+				"Like New",
+				1,
+				"Filter City",
+				null,
+				null,
+				List.of(),
+				List.of()));
+		ApiDtos.ListingResponse fairListing = listingService.create(donor, new ApiDtos.ListingCreateRequest(
+				"Fair monitor",
+				"A working monitor with visible wear for classroom use.",
+				"Electronics",
+				"Fair",
+				1,
+				"Filter City",
+				null,
+				null,
+				List.of(),
+				List.of()));
+
+		assertEquals(2, listingService.search(
+				"monitor", "Electronics", null, "Filter City", false).size());
+
+		assertOnlyListing(likeNewListing.id(), "Like New");
+		assertOnlyListing(likeNewListing.id(), "lIkE nEw");
+		assertOnlyListing(likeNewListing.id(), "  lIkE    nEw  ");
+		assertOnlyListing(likeNewListing.id(), "LIKE_NEW");
+		assertOnlyListing(fairListing.id(), "Fair");
+		assertOnlyListing(fairListing.id(), "fAiR");
+	}
+
+	private void assertOnlyListing(Long expectedListingId, String condition) {
+		List<ApiDtos.ListingResponse> results =
+				listingService.search("monitor", "Electronics", condition, "Filter City", false);
+		assertEquals(1, results.size());
+		assertEquals(expectedListingId, results.get(0).id());
 	}
 
 	private ApiDtos.ItemRequestResponse createRequest(User receiver, Long listingId, int quantity) {
